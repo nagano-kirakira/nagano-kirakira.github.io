@@ -1,0 +1,23 @@
+.bread ul {
+  display: flex; /* 子要素(li)を横一列に並べる */
+  list-style-type: none; /* リスト要素に表示されている"・"を非表示 */
+}
+
+.bread li a {
+  padding: 5px; /* リンク間の間隔を調整 */
+  color: #000000; /* リンクの文字色を調整 */
+  font-size: 14px; /* リンクの文字サイズを調整 */
+  text-decoration: none; /* リンクの下線を非表示 */
+}
+
+.bread li a:hover {
+  background-color: #EEEEEE; /* カーソルをリンクの上に乗せたときの背景色 */
+}
+
+.bread li::after{
+  content: '>';
+}
+
+.bread li:last-child::after{
+  display: none;
+}
