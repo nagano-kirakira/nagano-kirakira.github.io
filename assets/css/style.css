@@ -98,6 +98,26 @@ strong { font-weight: bold; }
 
 .header ul.nav li a:hover i { color: #fff; }
 
+/* ----- top-about ----- */
+.top-about{
+  padding:60px 20px;
+  background:#fafafa;
+  margin-bottom:80px;
+}
+
+.top-about .container{
+  max-width:1000px;
+  margin:0 auto;
+}
+
+.top-about h2{
+  margin-bottom:20px;
+}
+
+.top-about p{
+  line-height:1.9;
+  margin-bottom:16px;
+}
 
 /* ----- Slider ----- */
 
@@ -158,9 +178,9 @@ strong { font-weight: bold; }
 }
 
 .news dt{
-	/* ¶‚ÉŠñ‚¹‚é */
+	/* ï¿½ï¿½ï¿½ÉŠñ‚¹‚ï¿½ */
 	float: left;
-	/*Œã‘±‚Ì¶Šñ‚¹‚ğ‰ğœ*/
+	/*ï¿½ã‘±ï¿½Ìï¿½ï¿½ñ‚¹‚ï¿½ï¿½ï¿½ï¿½ï¿½*/
 	clear: left;
 	margin-right: 0.5em;
 	width: 90px;
