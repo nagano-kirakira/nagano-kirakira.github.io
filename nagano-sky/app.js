@@ -118,16 +118,43 @@ function drawBackground(m) {
 function drawCardinal(m) {
   const points = [{label:"北",az:0},{label:"東",az:90},{label:"南",az:180},{label:"西",az:270}];
   ctx.save();
-  ctx.fillStyle = "rgba(255,255,255,0.86)";
+  ctx.fillStyle = "rgba(255,255,255,0.88)";
   ctx.font = "bold 18px 'Noto Sans JP', system-ui, sans-serif";
   ctx.textAlign = "center";
   ctx.textBaseline = "middle";
 
+  // 地平線円の外側に配置する。ただし狭い画面ではCanvas内へ押し戻して、見切れを防ぐ。
+  const labelRadius = m.radius + 24;
+
   for (const p of points) {
     const a = degToRad(p.az);
-    ctx.fillText(p.label, m.cx + (m.radius + 24) * Math.sin(a), m.cy - (m.radius + 24) * Math.cos(a));
+    const rawX = m.cx + labelRadius * Math.sin(a);
+    const rawY = m.cy - labelRadius * Math.cos(a);
+    const safe = clampCanvasTextPosition(rawX, rawY, 24);
+    ctx.fillText(p.label, safe.x, safe.y);
   }
   ctx.restore();
+}
+
+function clampCanvasTextPosition(x, y, margin = 22) {
+  const canvasWidth = canvas.width / (window.devicePixelRatio || 1);
+  const canvasHeight = canvas.height / (window.devicePixelRatio || 1);
+  return {
+    x: Math.max(margin, Math.min(canvasWidth - margin, x)),
+    y: Math.max(margin, Math.min(canvasHeight - margin, y))
+  };
+}
+
+function clampLabelPosition(x, y, textWidth, textHeight = 22, margin = 8) {
+  // 通常ラベルは textAlign = "left" で描画するため、右端も考慮してX座標を補正する。
+  const canvasWidth = canvas.width / (window.devicePixelRatio || 1);
+  const canvasHeight = canvas.height / (window.devicePixelRatio || 1);
+  const halfH = textHeight / 2;
+
+  return {
+    x: Math.max(margin, Math.min(canvasWidth - textWidth - margin, x)),
+    y: Math.max(margin + halfH, Math.min(canvasHeight - margin - halfH, y))
+  };
 }
 
 function drawGrid(m) {
@@ -233,8 +260,8 @@ function drawBackgroundStars(date, m) {
     const pos = projectAltAz(hor.alt, hor.az, m);
     if (!pos) continue;
 
-    const size = Math.max(0.45, 2.0 - (mag - 3.2) * 0.55);
-    ctx.globalAlpha = 0.28 + (4.6 - mag) * 0.18;
+    const size = Math.max(0.26, 1.42 - (mag - 3.2) * 0.42);
+    ctx.globalAlpha = 0.18 + (4.6 - mag) * 0.12;
     ctx.beginPath();
     ctx.arc(pos.x, pos.y, size, 0, Math.PI * 2);
     ctx.fillStyle = "#ffffff";
@@ -294,17 +321,17 @@ function drawConstellationLines(date, m) {
 function starSize(mag) {
   if (mag <= 1) return 4.8;
   if (mag <= 2) return 3.7;
-  if (mag <= 3) return 2.7;
-  if (mag <= 4) return 1.85;
-  return 1.35;
+  if (mag <= 3) return 2.55;
+  if (mag <= 4) return 1.55;
+  return 1.05;
 }
 
 function starAlpha(mag) {
   if (mag <= 1) return 1;
   if (mag <= 2) return 0.9;
-  if (mag <= 3) return 0.72;
-  if (mag <= 4) return 0.54;
-  return 0.42;
+  if (mag <= 3) return 0.68;
+  if (mag <= 4) return 0.46;
+  return 0.34;
 }
 
 function drawStars(date, m) {
@@ -343,6 +370,34 @@ function drawStars(date, m) {
   }
 }
 
+
+function reserveFeaturedDeepSkyLabels(date, m) {
+  const visible = [];
+
+  for (const obj of SKY_DEEP_SKY) {
+    const hor = equatorialToHorizontal(obj.ra, obj.dec, date);
+    const pos = projectAltAz(hor.alt, hor.az, m);
+    if (!pos) continue;
+    visible.push({ ...obj, _pos: pos });
+  }
+
+  const featured = pickDailyDeepSkyObjects(visible, date, 3);
+
+  for (const obj of featured) {
+    placeLabel({
+      text: obj.label || obj.name,
+      x: obj._pos.x,
+      y: obj._pos.y,
+      kind: "deep",
+      font: "bold 12px 'Noto Sans JP', system-ui, sans-serif",
+      color: "rgba(96,255,225,0.96)",
+      priority: 0,
+      align: "left",
+      queueOnly: true
+    });
+  }
+}
+
 function drawDeepSky(date, m) {
   const visible = [];
 
@@ -350,24 +405,29 @@ function drawDeepSky(date, m) {
     const hor = equatorialToHorizontal(obj.ra, obj.dec, date);
     const pos = projectAltAz(hor.alt, hor.az, m);
     if (!pos) continue;
-
-    visible.push(obj);
-    drawDeepSkyObject(obj, pos);
-
-    placeLabel({
-      text: obj.label || obj.name,
-      x: pos.x,
-      y: pos.y,
-      kind: "deep",
-      font: "bold 12px 'Noto Sans JP', system-ui, sans-serif",
-      color: "rgba(96,255,225,0.96)",
-      priority: 2,
-      align: "left",
-      queueOnly: true
-    });
+    visible.push({ ...obj, _pos: pos });
   }
 
-  updateDeepSkyInfo(visible, date);
+  const featured = pickDailyDeepSkyObjects(visible, date, 3);
+
+  for (const obj of featured) {
+    drawDeepSkyObject(obj, obj._pos);
+  }
+
+  updateDeepSkyInfo(featured, date);
+}
+
+function pickDailyDeepSkyObjects(visible, date, limit = 3) {
+  if (!visible || visible.length <= limit) return visible || [];
+
+  const seed = makeDateSeed(date);
+  const scored = visible.map((item, index) => ({
+    item,
+    score: seededHash(`${seed}:${item.name}:${index}`)
+  }));
+
+  scored.sort((a, b) => a.score - b.score);
+  return scored.slice(0, limit).map(entry => entry.item);
 }
 
 function drawDeepSkyObject(obj, pos) {
@@ -426,7 +486,7 @@ function updateDeepSkyInfo(visible, date = getTodayAt20()) {
     return;
   }
 
-  const explanations = pickDailyDeepSkyExplanations(buildDeepSkyExplanations(visible), date, 3);
+  const explanations = buildDeepSkyExplanations(visible).slice(0, 3);
   pickEl.innerHTML = explanations.map(item =>
     `<span class="deepSkyItem">
       <span class="deepSkyName">${item.name}</span>
@@ -548,51 +608,47 @@ function placeLabel({ text, x, y, kind, font, color, priority, align = "left", q
   const w = Math.ceil(ctx.measureText(text).width);
   ctx.restore();
 
-  const h = kind === "constellation" ? 22 : 20;
-  const candidates = align === "center"
+  const h = kind === "constellation" ? 24 : 22;
+  const baseCandidates = align === "center"
     ? [{dx:-w/2,dy:-10},{dx:-w/2,dy:16},{dx:-w/2,dy:-32},{dx:-w/2,dy:34},{dx:14,dy:-8},{dx:-w-14,dy:-8}]
     : [{dx:10,dy:-14},{dx:10,dy:14},{dx:-w-13,dy:-14},{dx:-w-13,dy:14},{dx:-w/2,dy:-32},{dx:-w/2,dy:30},{dx:18,dy:0},{dx:-w-20,dy:0}];
 
-  let chosen = null;
-  for (const c of candidates) {
-    const box = { x: x + c.dx - 4, y: y + c.dy - h + 5, w: w + 9, h: h + 4, priority };
-    const overlaps = labelBoxes.some(existing => rectOverlaps(box, existing));
-    if (!overlaps) {
-      chosen = { c, box };
-      break;
-    }
-  }
+  const candidates = [...baseCandidates];
 
-  // 惑星と月のラベルは最優先。通常候補で置けない場合は、より遠い候補も試す。
-  if (!chosen && (kind === "planet" || kind === "moon")) {
-    const farCandidates = [
+  if (kind === "planet" || kind === "moon") {
+    candidates.push(
       {dx:22,dy:-34},{dx:22,dy:36},{dx:-w-26,dy:-34},{dx:-w-26,dy:36},
       {dx:34,dy:-4},{dx:-w-36,dy:-4},{dx:-w/2,dy:-50},{dx:-w/2,dy:52},
       {dx:48,dy:-20},{dx:-w-50,dy:20}
-    ];
-    for (const c of farCandidates) {
-      const box = { x: x + c.dx - 4, y: y + c.dy - h + 5, w: w + 9, h: h + 4, priority };
-      const overlaps = labelBoxes.some(existing => rectOverlaps(box, existing));
-      if (!overlaps) {
-        chosen = { c, box };
-        break;
-      }
-    }
+    );
   }
 
-  // 星雲・星団は位置を示すため、通常候補で置けない場合は少し遠い候補も試す。
-  if (!chosen && kind === "deep") {
-    const farCandidates = [
+  if (kind === "deep") {
+    candidates.push(
       {dx:18,dy:-28},{dx:18,dy:30},{dx:-w-22,dy:-28},{dx:-w-22,dy:30},
       {dx:26,dy:-2},{dx:-w-28,dy:-2},{dx:-w/2,dy:-44},{dx:-w/2,dy:44}
-    ];
-    for (const c of farCandidates) {
-      const box = { x: x + c.dx - 4, y: y + c.dy - h + 5, w: w + 9, h: h + 4, priority };
-      const overlaps = labelBoxes.some(existing => rectOverlaps(box, existing));
-      if (!overlaps) {
-        chosen = { c, box };
-        break;
-      }
+    );
+  }
+
+  let chosen = null;
+
+  for (const c of candidates) {
+    const rawX = x + c.dx;
+    const rawY = y + c.dy;
+    const safe = clampLabelPosition(rawX, rawY, w, h, 8);
+
+    const box = {
+      x: safe.x - 5,
+      y: safe.y - h / 2 - 2,
+      w: w + 10,
+      h: h + 4,
+      priority
+    };
+
+    const overlaps = labelBoxes.some(existing => rectOverlaps(box, existing));
+    if (!overlaps) {
+      chosen = { x: safe.x, y: safe.y, box };
+      break;
     }
   }
 
@@ -603,8 +659,8 @@ function placeLabel({ text, x, y, kind, font, color, priority, align = "left", q
 
   labelDrawQueue.push({
     text,
-    x: x + chosen.c.dx,
-    y: y + chosen.c.dy,
+    x: chosen.x,
+    y: chosen.y,
     font,
     color,
     kind,
@@ -1247,9 +1303,10 @@ function render() {
   drawBackgroundStars(date, m);
   drawGrid(m);
 
-  // 惑星・月ラベルを最優先にするため、他のラベルより先に場所を確保します。
+  // 惑星・月・星雲星団ラベルを最優先にするため、他のラベルより先に場所を確保します。
   drawPlanets(date, m);
   reserveMoonLabel(date, m);
+  reserveFeaturedDeepSkyLabels(date, m);
 
   reserveConstellationLabels(date, m);
   drawConstellationLines(date, m);
