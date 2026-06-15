@@ -367,7 +367,7 @@ function drawDeepSky(date, m) {
     });
   }
 
-  updateDeepSkyInfo(visible);
+  updateDeepSkyInfo(visible, date);
 }
 
 function drawDeepSkyObject(obj, pos) {
@@ -409,7 +409,7 @@ function deepSkyTypeColor(type) {
   return "rgba(210,235,255,0.98)";
 }
 
-function updateDeepSkyInfo(visible) {
+function updateDeepSkyInfo(visible, date = getTodayAt20()) {
   const el = document.getElementById("deepSkyInfo");
   const pickEl = document.getElementById("deepSkyPick");
   if (el) el.textContent = "";
@@ -426,7 +426,7 @@ function updateDeepSkyInfo(visible) {
     return;
   }
 
-  const explanations = buildDeepSkyExplanations(visible).slice(0, 3);
+  const explanations = pickDailyDeepSkyExplanations(buildDeepSkyExplanations(visible), date, 3);
   pickEl.innerHTML = explanations.map(item =>
     `<span class="deepSkyItem">
       <span class="deepSkyName">${item.name}</span>
@@ -450,28 +450,71 @@ function buildDeepSkyExplanations(visible) {
     "M81 ボーデの銀河": "おおぐま座方向の明るい銀河。M82と近くに並んで見えます。",
     "M82 葉巻銀河": "細長い形で知られる銀河。M81の近くにあります。",
     "M22 球状星団": "いて座にある明るい球状星団。夏の南の空で楽しめます。",
-    "M27 亜鈴状星雲": "こぎつね座にある惑星状星雲。亜鈴のような形で知られます。"
+    "M27 亜鈴状星雲": "こぎつね座にある惑星状星雲。亜鈴のような形で知られます。",
+    "M3 球状星団": "りょうけん座付近にある春の球状星団。小口径望遠鏡でも存在感があります。",
+    "M65 しし座の銀河": "しし座トリプレットの一員。M66と近くに並ぶ春の銀河です。",
+    "M66 しし座の銀河": "しし座トリプレットの明るい銀河。M65と一緒に探しやすい対象です。",
+    "M104 ソンブレロ銀河": "おとめ座方向の有名な銀河。暗い帯を持つ姿からソンブレロの名で知られます。",
+    "M5 球状星団": "へび座にある明るい球状星団。春から初夏に見やすい対象です。",
+    "M67 散開星団": "かに座にある古い散開星団。プレセペより小ぶりですが落ち着いた星の集まりです。",
+    "M48 散開星団": "うみへび座にある広がりのある散開星団。双眼鏡向きの対象です。",
+    "M92 球状星団": "ヘルクレス座にある球状星団。M13ほど有名ではありませんが見応えがあります。",
+    "M4 球状星団": "アンタレスの近くにある球状星団。南の低空で条件が良いと楽しめます。",
+    "M20 三裂星雲": "干潟星雲の近くにある星雲。暗黒帯が星雲を分ける姿で知られます。",
+    "M17 オメガ星雲": "いて座方向の明るい星雲。白鳥やオメガの形に例えられる対象です。",
+    "M16 わし星雲": "へび座にある散光星雲。星形成領域として有名な対象です。",
+    "M6 バタフライ星団": "さそり座の低空に見える散開星団。蝶のような星並びで知られます。",
+    "M7 トレミー星団": "さそり座の尾に近い大きな散開星団。南の低空で見えると美しい対象です。",
+    "M11 野鴨星団": "たて座にある密集した散開星団。星が多く、望遠鏡で見応えがあります。",
+    "M24 いて座スタークラウド": "天の川の濃い部分にある星の雲。双眼鏡で星が一面に広がります。",
+    "M15 球状星団": "ペガスス座にある秋の球状星団。中心部がぎゅっと濃い対象です。",
+    "M2 球状星団": "みずがめ座にある球状星団。秋の夜空で探せる古い星の集まりです。",
+    "M1 かに星雲": "おうし座にある超新星残骸。歴史に残る超新星の名残として有名です。",
+    "M36 散開星団": "ぎょしゃ座にある散開星団。M37、M38と合わせて冬に楽しめます。",
+    "M37 散開星団": "ぎょしゃ座の散開星団の中でも星数が多く、細かな星粒が美しい対象です。",
+    "M38 散開星団": "ぎょしゃ座にある散開星団。冬の天の川沿いに見える星の集まりです。",
+    "M41 散開星団": "シリウスの南にある散開星団。冬の南の空で探しやすい対象です。",
+    "M35 散開星団": "ふたご座の足元にある大きな散開星団。双眼鏡でも楽しめます。",
+    "M46 散開星団": "とも座にある散開星団。近くに惑星状星雲を含むことで知られます。",
+    "M47 散開星団": "とも座の明るめの散開星団。M46と近くに並びます。"
   };
 
-  const priority = [
-    "M31 アンドロメダ銀河", "M45 プレアデス星団", "M42 オリオン大星雲",
-    "M13 ヘルクレス球状星団", "M8 干潟星雲", "M57 リング星雲",
-    "二重星団", "M44 プレセペ星団", "M33 さんかく座銀河", "M51 子持ち銀河",
-    "M81 ボーデの銀河", "M82 葉巻銀河", "M22 球状星団", "M27 亜鈴状星雲"
-  ];
+  return visible.map(obj => ({
+    name: obj.name,
+    description: descriptions[obj.name] || typeDescription(obj.type)
+  }));
+}
 
-  const picked = [];
-  for (const name of priority) {
-    const hit = visible.find(o => o.name === name);
-    if (hit) picked.push({ name: hit.name, description: descriptions[name] });
+function pickDailyDeepSkyExplanations(explanations, date, limit = 3) {
+  if (!explanations || explanations.length <= limit) return explanations || [];
+
+  const seed = makeDateSeed(date);
+  const scored = explanations.map((item, index) => ({
+    item,
+    score: seededHash(`${seed}:${item.name}:${index}`)
+  }));
+
+  scored.sort((a, b) => a.score - b.score);
+  return scored.slice(0, limit).map(entry => entry.item);
+}
+
+function makeDateSeed(date) {
+  const d = date instanceof Date ? date : new Date(date);
+  const y = d.getFullYear();
+  const m = String(d.getMonth() + 1).padStart(2, "0");
+  const day = String(d.getDate()).padStart(2, "0");
+  return `${y}-${m}-${day}`;
+}
+
+function seededHash(text) {
+  // 文字列から0以上1未満の疑似乱数を作る。
+  // 同じ日付・同じ天体なら同じ値になり、翌日は並びが変わる。
+  let h = 2166136261;
+  for (let i = 0; i < text.length; i++) {
+    h ^= text.charCodeAt(i);
+    h = Math.imul(h, 16777619);
   }
-
-  for (const obj of visible) {
-    if (picked.some(p => p.name === obj.name)) continue;
-    picked.push({ name: obj.name, description: typeDescription(obj.type) });
-  }
-
-  return picked;
+  return (h >>> 0) / 4294967296;
 }
 
 function chooseFeaturedDeepSky(visible) {
@@ -489,6 +532,8 @@ function typeDescription(type) {
   if (type === "globularCluster") return "古い星が丸く密集した星団です。望遠鏡では中心ほど濃く見えます。";
   if (type === "emissionNebula") return "ガスが光って見える星雲です。星が生まれる領域を含むことがあります。";
   if (type === "planetaryNebula") return "恒星の最期に放出されたガスが光って見える天体です。";
+  if (type === "starCloud") return "天の川の星が濃く集まって見える領域です。双眼鏡で星粒が広がります。";
+  if (type === "supernovaRemnant") return "星が大爆発したあとに残されたガスの名残です。";
   return "若い星々がゆるく集まった散開星団です。双眼鏡で楽しみやすい対象です。";
 }
 

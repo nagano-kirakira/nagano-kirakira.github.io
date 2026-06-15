@@ -192,9 +192,17 @@ const SKY_DEEP_SKY = [
   { name:"M51 子持ち銀河", type:"galaxy", season:"春", ra:13.498, dec:47.195, size:13 },
   { name:"M81 ボーデの銀河", type:"galaxy", season:"春", ra:9.926, dec:69.066, size:14 },
   { name:"M82 葉巻銀河", type:"galaxy", season:"春", ra:9.931, dec:69.679, size:12 },
+  { name:"M65 しし座の銀河", type:"galaxy", season:"春", ra:11.315, dec:13.092, size:12 },
+  { name:"M66 しし座の銀河", type:"galaxy", season:"春", ra:11.337, dec:12.991, size:12 },
+  { name:"M104 ソンブレロ銀河", type:"galaxy", season:"春", ra:12.666, dec:-11.623, size:13 },
+  { name:"M5 球状星団", type:"globularCluster", season:"春", ra:15.309, dec:2.082, size:13 },
+  { name:"M67 散開星団", type:"openCluster", season:"春", ra:8.851, dec:11.817, size:13 },
+  { name:"M48 散開星団", type:"openCluster", season:"春", ra:8.229, dec:-5.750, size:14 },
 
   // 夏
   { name:"M13 ヘルクレス球状星団", type:"globularCluster", season:"夏", ra:16.6950, dec:36.4667, size:14 },
+  { name:"M92 球状星団", type:"globularCluster", season:"夏", ra:17.285, dec:43.136, size:12 },
+  { name:"M4 球状星団", type:"globularCluster", season:"夏", ra:16.393, dec:-26.525, size:13 },
   { name:"M8 干潟星雲", type:"emissionNebula", season:"夏", ra:18.061, dec:-24.386, size:22 },
   { name:"M20 三裂星雲", type:"emissionNebula", season:"夏", ra:18.041, dec:-23.030, size:15 },
   { name:"M17 オメガ星雲", type:"emissionNebula", season:"夏", ra:18.346, dec:-16.176, size:16 },
@@ -202,17 +210,29 @@ const SKY_DEEP_SKY = [
   { name:"M22 球状星団", type:"globularCluster", season:"夏", ra:18.607, dec:-23.904, size:16 },
   { name:"M57 リング星雲", label:"M57 リング星雲", type:"planetaryNebula", season:"夏", ra:18.894, dec:33.030, size:10 },
   { name:"M27 亜鈴状星雲", type:"planetaryNebula", season:"夏", ra:19.993, dec:22.721, size:13 },
+  { name:"M6 バタフライ星団", type:"openCluster", season:"夏", ra:17.672, dec:-32.217, size:13 },
+  { name:"M7 トレミー星団", type:"openCluster", season:"夏", ra:17.898, dec:-34.792, size:16 },
+  { name:"M11 野鴨星団", type:"openCluster", season:"夏", ra:18.851, dec:-6.270, size:13 },
+  { name:"M24 いて座スタークラウド", type:"starCloud", season:"夏", ra:18.281, dec:-18.483, size:22 },
 
   // 秋
   { name:"M31 アンドロメダ銀河", type:"galaxy", season:"秋", ra:0.7123, dec:41.2692, size:24 },
   { name:"二重星団", type:"doubleCluster", season:"秋", ra:2.3333, dec:57.1333, size:18 },
   { name:"M33 さんかく座銀河", type:"galaxy", season:"秋", ra:1.564, dec:30.660, size:16 },
+  { name:"M15 球状星団", type:"globularCluster", season:"秋", ra:21.500, dec:12.167, size:13 },
+  { name:"M2 球状星団", type:"globularCluster", season:"秋", ra:21.558, dec:-0.823, size:13 },
 
   // 冬
   { name:"M45 プレアデス星団", type:"openClusterBlue", season:"冬", ra:3.7900, dec:24.1167, size:18 },
   { name:"M42 オリオン大星雲", type:"emissionNebula", season:"冬", ra:5.5881, dec:-5.3911, size:18 },
+  { name:"M1 かに星雲", type:"supernovaRemnant", season:"冬", ra:5.576, dec:22.015, size:12 },
+  { name:"M36 散開星団", type:"openCluster", season:"冬", ra:5.604, dec:34.140, size:13 },
+  { name:"M37 散開星団", type:"openCluster", season:"冬", ra:5.872, dec:32.550, size:13 },
+  { name:"M38 散開星団", type:"openCluster", season:"冬", ra:5.478, dec:35.850, size:13 },
   { name:"M41 散開星団", type:"openCluster", season:"冬", ra:6.767, dec:-20.756, size:14 },
-  { name:"M35 散開星団", type:"openCluster", season:"冬", ra:6.151, dec:24.333, size:15 }
+  { name:"M35 散開星団", type:"openCluster", season:"冬", ra:6.151, dec:24.333, size:15 },
+  { name:"M46 散開星団", type:"openCluster", season:"冬", ra:7.696, dec:-14.810, size:13 },
+  { name:"M47 散開星団", type:"openCluster", season:"冬", ra:7.610, dec:-14.490, size:13 }
 ];
 
 const MILKY_WAY_PATH = [
