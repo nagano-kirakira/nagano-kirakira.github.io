@@ -417,13 +417,21 @@ function updateDeepSkyInfo(visible) {
   if (!pickEl) return;
 
   if (!visible || visible.length === 0) {
-    pickEl.innerHTML = "この時刻は代表的な星雲・星団が地平線下に多い時間帯です。季節が変わると、プレアデス、M31、M13、M8などが入れ替わって表示されます。";
+    pickEl.innerHTML = `
+      <span class="deepSkyItem">
+        <span class="deepSkyName">今夜の星雲・星団</span>
+        <span class="deepSkyDesc">この時刻は代表的な星雲・星団が地平線下に多い時間帯です。季節が変わると、プレアデス、M31、M13、M8などが入れ替わって表示されます。</span>
+      </span>
+    `;
     return;
   }
 
   const explanations = buildDeepSkyExplanations(visible).slice(0, 3);
   pickEl.innerHTML = explanations.map(item =>
-    `<span class="deepSkyLine"><strong>${item.name}</strong>：${item.description}</span>`
+    `<span class="deepSkyItem">
+      <span class="deepSkyName">${item.name}</span>
+      <span class="deepSkyDesc">${item.description}</span>
+    </span>`
   ).join("");
 }
 
@@ -467,26 +475,12 @@ function buildDeepSkyExplanations(visible) {
 }
 
 function chooseFeaturedDeepSky(visible) {
-  const descriptions = {
-    "M31 アンドロメダ銀河": "秋の代表格。肉眼でも条件が良ければ、ぼんやり淡い雲のように見える大銀河です。",
-    "M45 プレアデス星団": "冬の代表格。「すばる」として有名な、青白い若い星たちの集まりです。",
-    "M42 オリオン大星雲": "冬の代表格。オリオン座の三つ星の下にあり、星が生まれている明るい星雲です。",
-    "M13 ヘルクレス球状星団": "夏の代表格。古い星がぎゅっと球状に集まった、北天屈指の球状星団です。",
-    "M8 干潟星雲": "夏の天の川沿いにある大きな散光星雲。双眼鏡でも探しやすい華やかな領域です。",
-    "M57 リング星雲": "こと座にある小さな惑星状星雲。望遠鏡では煙の輪のような姿で知られます。",
-    "二重星団": "秋から冬に楽しい、2つ並んだ散開星団。双眼鏡で見ると星粒が密集して見えます。",
-    "M44 プレセペ星団": "春のかに座にある散開星団。肉眼では淡い雲、双眼鏡では星の群れとして楽しめます。"
-  };
+  const explanations = buildDeepSkyExplanations(visible);
+  if (explanations.length > 0) return explanations[0];
 
-  for (const key of Object.keys(descriptions)) {
-    const hit = visible.find(o => o.name === key);
-    if (hit) return { name: hit.name, description: descriptions[key] };
-  }
-
-  const first = visible[0];
   return {
-    name: first.name,
-    description: typeDescription(first.type)
+    name: "今夜の星雲・星団",
+    description: "この時刻は、代表的な星雲・星団が地平線下に多い時間帯です。季節が変わると表示対象も入れ替わります。"
   };
 }
 
