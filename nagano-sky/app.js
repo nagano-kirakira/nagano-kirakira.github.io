@@ -524,8 +524,8 @@ function placeLabel({ text, x, y, kind, font, color, priority, align = "left", q
     }
   }
 
-  // 惑星ラベルは最優先。通常候補で置けない場合は、より遠い候補も試す。
-  if (!chosen && kind === "planet") {
+  // 惑星と月のラベルは最優先。通常候補で置けない場合は、より遠い候補も試す。
+  if (!chosen && (kind === "planet" || kind === "moon")) {
     const farCandidates = [
       {dx:22,dy:-34},{dx:22,dy:36},{dx:-w-26,dy:-34},{dx:-w-26,dy:36},
       {dx:34,dy:-4},{dx:-w-36,dy:-4},{dx:-w/2,dy:-50},{dx:-w/2,dy:52},
@@ -582,7 +582,7 @@ function flushLabels() {
     ctx.textAlign = "left";
     ctx.textBaseline = "middle";
 
-    if (item.kind === "planet") {
+    if (item.kind === "planet" || item.kind === "moon") {
       ctx.fillStyle = "rgba(2, 7, 18, 0.66)";
       roundRect(ctx, item.x - 5, item.y - 11, item.w + 10, 22, 8);
       ctx.fill();
@@ -842,6 +842,34 @@ function formatRiseSetText(rs) {
   return `昇 ${formatTimeShort(rs.rise)} / 沈 ${formatTimeShort(rs.set)}`;
 }
 
+
+function reserveMoonLabel(date, m) {
+  if (typeof Astronomy === "undefined") return;
+
+  try {
+    const observer = new Astronomy.Observer(LOCATION.latitude, LOCATION.longitude, LOCATION.elevation);
+    const equ = Astronomy.Equator("Moon", date, observer, true, true);
+    const hor = Astronomy.Horizon(date, observer, equ.ra, equ.dec, "normal");
+    const pos = projectAltAz(hor.altitude, hor.azimuth, m);
+    if (!pos) return;
+
+    placeLabel({
+      text: "月",
+      x: pos.x,
+      y: pos.y,
+      kind: "moon",
+      font: "bold 14px 'Noto Sans JP', system-ui, sans-serif",
+      color: "rgba(255,245,210,0.96)",
+      priority: 0,
+      align: "left",
+      queueOnly: true
+    });
+  } catch (error) {
+    console.warn("Moon label reservation failed:", error);
+  }
+}
+
+
 function drawMoon(date, m) {
   if (typeof Astronomy === "undefined") {
     updateMoonInfo(null, null, date);
@@ -860,17 +888,6 @@ function drawMoon(date, m) {
     if (!pos) return;
 
     drawMoonIcon(pos.x, pos.y, phase);
-    placeLabel({
-      text: "月",
-      x: pos.x,
-      y: pos.y,
-      kind: "moon",
-      font: "bold 14px 'Noto Sans JP', system-ui, sans-serif",
-      color: "rgba(255,245,210,0.96)",
-      priority: 1,
-      align: "left",
-      queueOnly: true
-    });
   } catch (error) {
     console.warn("Moon calculation failed:", error);
     updateMoonInfo(null, null, date);
@@ -908,41 +925,97 @@ function moonPhaseName(age) {
 }
 
 function drawMoonIcon(x, y, phase) {
-  const r = 9.5;
+  // 星図上の月アイコン。
+  // moon-fix: 月カードと同じ考え方で、細い月が不自然な丸に見えないよう改善。
+  const r = 11;
+  const synodic = 29.530588853;
+  const age = phase ? phase.age : 14.8;
+  const illum = phase ? Math.max(0, Math.min(1, phase.fraction ?? 0.5)) : 0.5;
+  const waxing = age < synodic / 2;
+
   ctx.save();
   ctx.translate(x, y);
 
+  // halo
+  const halo = ctx.createRadialGradient(0, 0, 2, 0, 0, r * 2.25);
+  halo.addColorStop(0, "rgba(255,246,215,0.34)");
+  halo.addColorStop(1, "rgba(255,246,215,0)");
+  ctx.fillStyle = halo;
+  ctx.beginPath();
+  ctx.arc(0, 0, r * 2.25, 0, Math.PI * 2);
+  ctx.fill();
+
+  // Clip to moon disk
+  ctx.save();
   ctx.beginPath();
   ctx.arc(0, 0, r, 0, Math.PI * 2);
-  ctx.fillStyle = "rgba(245,240,210,0.96)";
-  ctx.shadowColor = "rgba(255,245,210,0.85)";
-  ctx.shadowBlur = 18;
-  ctx.fill();
+  ctx.clip();
 
-  // Simple visual phase hint, not a photorealistic lunar rendering.
-  const age = phase ? phase.age : 14;
-  const waxing = age < 14.765;
-  const k = phase ? Math.cos(degToRad(phase.phaseAngle)) : -1;
+  // dark base
+  ctx.fillStyle = "rgba(13,18,28,0.98)";
+  ctx.fillRect(-r, -r, r * 2, r * 2);
 
-  ctx.globalCompositeOperation = "source-atop";
-  ctx.fillStyle = "rgba(2,7,18,0.50)";
+  // lunar surface gradient
+  const moonGrad = ctx.createRadialGradient(-3.5, -4.5, 1, 0, 0, r + 3);
+  moonGrad.addColorStop(0, "rgba(255,252,226,1)");
+  moonGrad.addColorStop(0.58, "rgba(232,224,190,1)");
+  moonGrad.addColorStop(1, "rgba(174,165,136,1)");
 
-  ctx.beginPath();
-  if (waxing) {
-    ctx.ellipse(-r * 0.45 * k, 0, r * Math.abs(k), r, 0, -Math.PI/2, Math.PI/2);
+  if (illum > 0.985) {
+    ctx.fillStyle = moonGrad;
+    ctx.fillRect(-r, -r, r * 2, r * 2);
+  } else if (illum < 0.015) {
+    // new moon: keep dark disk
   } else {
-    ctx.ellipse(r * 0.45 * k, 0, r * Math.abs(k), r, 0, Math.PI/2, 3*Math.PI/2);
-  }
-  ctx.fill();
+    // Draw a full bright disk, then cover part of it with a shifted dark disk.
+    // This creates a cleaner crescent / gibbous shape than the old semi-transparent ellipse.
+    ctx.fillStyle = moonGrad;
+    ctx.beginPath();
+    ctx.arc(0, 0, r, 0, Math.PI * 2);
+    ctx.fill();
 
-  ctx.globalCompositeOperation = "source-over";
-  ctx.strokeStyle = "rgba(255,255,255,0.35)";
+    ctx.fillStyle = "rgba(13,18,28,0.98)";
+
+    let coverShift;
+    if (illum <= 0.5) {
+      // Crescent: the dark disk covers most of the bright disk.
+      coverShift = r * (2 * illum);
+      ctx.beginPath();
+      ctx.arc(waxing ? -coverShift : coverShift, 0, r, 0, Math.PI * 2);
+      ctx.fill();
+    } else {
+      // Gibbous: cover only the smaller dark side.
+      coverShift = r * (2 * (1 - illum));
+      ctx.beginPath();
+      ctx.arc(waxing ? coverShift : -coverShift, 0, r, 0, Math.PI * 2);
+      ctx.fill();
+    }
+  }
+
+  // Subtle surface texture
+  ctx.fillStyle = "rgba(82,76,64,0.16)";
+  [
+    [-3.2, -3.6, 1.3],
+    [3.8, 2.5, 1.5],
+    [-1.0, 4.0, 0.9]
+  ].forEach(([dx, dy, rr]) => {
+    ctx.beginPath();
+    ctx.arc(dx, dy, rr, 0, Math.PI * 2);
+    ctx.fill();
+  });
+
+  ctx.restore();
+
+  // rim
+  ctx.strokeStyle = "rgba(255,255,255,0.46)";
   ctx.lineWidth = 1;
   ctx.beginPath();
   ctx.arc(0, 0, r, 0, Math.PI * 2);
   ctx.stroke();
+
   ctx.restore();
 }
+
 
 function updateMoonInfo(phase, altitude = null, date = getTodayAt20()) {
   const el = document.getElementById("moonInfo");
@@ -1135,8 +1208,9 @@ function render() {
   drawBackgroundStars(date, m);
   drawGrid(m);
 
-  // 惑星ラベルを最優先にするため、他のラベルより先に場所を確保します。
+  // 惑星・月ラベルを最優先にするため、他のラベルより先に場所を確保します。
   drawPlanets(date, m);
+  reserveMoonLabel(date, m);
 
   reserveConstellationLabels(date, m);
   drawConstellationLines(date, m);
