@@ -531,3 +531,28 @@
     letter-spacing: 0.015em;
   }
 }
+
+
+.skyPageFooter{
+  margin: 28px auto 12px;
+  padding: 10px 12px 24px;
+  text-align: center;
+}
+
+.skyPageFooter p{
+  margin: 0;
+  font-family: "Noto Sans JP", sans-serif;
+  font-size: 0.92rem;
+  color: rgba(220,230,255,0.72);
+  letter-spacing: 0.04em;
+}
+
+@media (max-width: 640px){
+  .skyPageFooter{
+    margin-top: 22px;
+    padding-bottom: 20px;
+  }
+  .skyPageFooter p{
+    font-size: 0.82rem;
+  }
+}

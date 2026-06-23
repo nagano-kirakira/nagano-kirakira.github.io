@@ -1,17 +1,14 @@
-# nagano-sky Ophiuchus expanded fix v3
+# nagano-sky Ophiuchus expanded fix v4
 
 ## ベース
-`nagano-sky-ophiuchus-expanded-v2.zip`
+`nagano-sky-ophiuchus-expanded-v3.zip`
 
 ## 修正内容
-へびつかい座に **ε → ζ** の接続を追加しました。
+ページ最下部に著作権表記を追加しました。
 
-### 追加した接続
-- `yedPosterior` → `zetaOph`
+### 追加した表示
+- `©しなの星空散歩会　きらきら`
 
-## 簡易検証
-```json
-{
-  "へびつかい座_crosses": []
-}
-```
+### 実装箇所
+- `index.html` に `footer.skyPageFooter` を追加
+- `style.css` にフッター用スタイルを追加
