@@ -695,6 +695,59 @@ function flushLabels() {
   }
 }
 
+function drawMoonPhaseDisk(targetCtx, x, y, r, phase, darkColor = "rgba(13,18,28,0.98)") {
+  const synodic = 29.530588853;
+  const age = phase ? phase.age : 14.8;
+  const illum = phase ? Math.max(0, Math.min(1, phase.fraction ?? 0.5)) : 0.5;
+  const waxing = age < synodic / 2;
+
+  targetCtx.save();
+  targetCtx.translate(x, y);
+
+  targetCtx.beginPath();
+  targetCtx.arc(0, 0, r, 0, Math.PI * 2);
+  targetCtx.clip();
+
+  targetCtx.fillStyle = darkColor;
+  targetCtx.fillRect(-r, -r, r * 2, r * 2);
+
+  const moonGrad = targetCtx.createRadialGradient(-r * 0.35, -r * 0.4, 1, 0, 0, r + 3);
+  moonGrad.addColorStop(0, "rgba(255,252,226,1)");
+  moonGrad.addColorStop(0.58, "rgba(232,224,190,1)");
+  moonGrad.addColorStop(1, "rgba(174,165,136,1)");
+
+  if (illum > 0.985) {
+    targetCtx.fillStyle = moonGrad;
+    targetCtx.fillRect(-r, -r, r * 2, r * 2);
+  } else if (illum >= 0.015) {
+    // 明るい円を描いてから、暗い円をずらして重ねる。
+    // 上弦前後（waxing）は右側が明るく、下弦前後（waning）は左側が明るくなる。
+    targetCtx.fillStyle = moonGrad;
+    targetCtx.beginPath();
+    targetCtx.arc(0, 0, r, 0, Math.PI * 2);
+    targetCtx.fill();
+
+    targetCtx.fillStyle = darkColor;
+    const coverX = (waxing ? -1 : 1) * (2 * r * illum);
+    targetCtx.beginPath();
+    targetCtx.arc(coverX, 0, r, 0, Math.PI * 2);
+    targetCtx.fill();
+  }
+
+  targetCtx.fillStyle = "rgba(82,76,64,0.14)";
+  [
+    [-r * 0.25, -r * 0.30, r * 0.12],
+    [ r * 0.33,  r * 0.22, r * 0.14],
+    [-r * 0.08,  r * 0.36, r * 0.09]
+  ].forEach(([dx, dy, rr]) => {
+    targetCtx.beginPath();
+    targetCtx.arc(dx, dy, rr, 0, Math.PI * 2);
+    targetCtx.fill();
+  });
+
+  targetCtx.restore();
+}
+
 function drawMoonCardIcon(phase) {
   const c = document.getElementById("moonCardCanvas");
   if (!c) return;
@@ -714,12 +767,6 @@ function drawMoonCardIcon(phase) {
   const y = size / 2;
   const r = 30;
 
-  const age = phase ? phase.age : 25.5;
-  const synodic = 29.530588853;
-  const illum = phase ? Math.max(0, Math.min(1, phase.fraction)) : 0.18;
-  const waxing = age < synodic / 2;
-
-  // halo
   const halo = g.createRadialGradient(x, y, 4, x, y, 45);
   halo.addColorStop(0, "rgba(255,246,215,0.24)");
   halo.addColorStop(1, "rgba(255,246,215,0)");
@@ -728,79 +775,21 @@ function drawMoonCardIcon(phase) {
   g.arc(x, y, 45, 0, Math.PI * 2);
   g.fill();
 
-  // clip to moon disk
-  g.save();
-  g.beginPath();
-  g.arc(x, y, r, 0, Math.PI * 2);
-  g.clip();
+  drawMoonPhaseDisk(g, x, y, r, phase, "rgba(16,20,30,0.98)");
 
-  // base dark disk
-  g.fillStyle = "rgba(16,20,30,0.98)";
-  g.fillRect(x - r, y - r, r * 2, r * 2);
-
-  // moon surface gradient
-  const moonGrad = g.createRadialGradient(x - 9, y - 10, 2, x, y, r + 5);
-  moonGrad.addColorStop(0, "rgba(255,252,226,1)");
-  moonGrad.addColorStop(0.58, "rgba(232,224,190,1)");
-  moonGrad.addColorStop(1, "rgba(174,165,136,1)");
-
-  // Robust phase drawing using two-circle mask.
-  if (illum > 0.985) {
-    g.fillStyle = moonGrad;
-    g.fillRect(x - r, y - r, r * 2, r * 2);
-  } else if (illum < 0.015) {
-    // new moon: keep dark disk
-  } else {
-    // Draw lit full disk, then cover with a dark disk shifted.
-    g.fillStyle = moonGrad;
-    g.beginPath();
-    g.arc(x, y, r, 0, Math.PI * 2);
-    g.fill();
-
-    g.fillStyle = "rgba(16,20,30,0.98)";
-
-    let coverShift;
-    if (illum <= 0.5) {
-      // crescent: cover almost all; lit side right when waxing, left when waning.
-      coverShift = r * illum * 2.05;
-    } else {
-      // gibbous: cover only a smaller side.
-      coverShift = r * (2 - illum * 2.05);
-    }
-
-    const direction = waxing ? -1 : 1;
-    g.beginPath();
-    g.arc(x + direction * coverShift, y, r, 0, Math.PI * 2);
-    g.fill();
-  }
-
-  // subtle shading
   const shade = g.createLinearGradient(x - r, y, x + r, y);
   shade.addColorStop(0, "rgba(0,0,0,0.18)");
   shade.addColorStop(0.5, "rgba(0,0,0,0)");
   shade.addColorStop(1, "rgba(0,0,0,0.20)");
+  g.save();
+  g.beginPath();
+  g.arc(x, y, r, 0, Math.PI * 2);
+  g.clip();
   g.fillStyle = shade;
   g.fillRect(x - r, y - r, r * 2, r * 2);
-
-  // subtle craters
-  const craters = [
-    [-9, -8, 3.2, 0.15],
-    [8, 6, 4.0, 0.12],
-    [-1, 11, 2.4, 0.13],
-    [10, -10, 2.0, 0.11],
-    [-13, 6, 1.7, 0.10]
-  ];
-  for (const [dx, dy, rr, alpha] of craters) {
-    g.beginPath();
-    g.arc(x + dx, y + dy, rr, 0, Math.PI * 2);
-    g.fillStyle = `rgba(70,64,54,${alpha})`;
-    g.fill();
-  }
-
   g.restore();
 
-  // rim
-  g.strokeStyle = "rgba(255,255,255,0.40)";
+  g.strokeStyle = "rgba(255,255,255,0.42)";
   g.lineWidth = 1.2;
   g.beginPath();
   g.arc(x, y, r, 0, Math.PI * 2);
@@ -888,18 +877,24 @@ function altitudeForBody(bodyKey, date, observer) {
   return hor.altitude;
 }
 
-function findRiseSetTimes(bodyKey, date) {
-  if (typeof Astronomy === "undefined") return { rise: null, set: null, alwaysUp: false, alwaysDown: false };
+function interpolateCrossing(t1, a1, t2, a2) {
+  const ratio = Math.abs(a1) / (Math.abs(a1) + Math.abs(a2));
+  return new Date(t1.getTime() + (t2.getTime() - t1.getTime()) * ratio);
+}
 
+function findRiseSetCrossingsInRange(bodyKey, start, hours) {
   const observer = new Astronomy.Observer(LOCATION.latitude, LOCATION.longitude, LOCATION.elevation);
-  const start = getLocalMidnight(date);
-  const stepMs = 10 * 60 * 1000;
-  const endMs = start.getTime() + 24 * 60 * 60 * 1000;
+  const stepMs = 5 * 60 * 1000;
+  const endMs = start.getTime() + hours * 60 * 60 * 1000;
 
   let prevTime = start;
   let prevAlt;
-  try { prevAlt = altitudeForBody(bodyKey, prevTime, observer); }
-  catch (error) { return { rise: null, set: null, alwaysUp: false, alwaysDown: false }; }
+
+  try {
+    prevAlt = altitudeForBody(bodyKey, prevTime, observer);
+  } catch (error) {
+    return { rise: null, set: null, minAlt: null, maxAlt: null };
+  }
 
   let rise = null;
   let set = null;
@@ -909,32 +904,141 @@ function findRiseSetTimes(bodyKey, date) {
   for (let t = start.getTime() + stepMs; t <= endMs; t += stepMs) {
     const curTime = new Date(t);
     let curAlt;
-    try { curAlt = altitudeForBody(bodyKey, curTime, observer); }
-    catch (error) { continue; }
+
+    try {
+      curAlt = altitudeForBody(bodyKey, curTime, observer);
+    } catch (error) {
+      continue;
+    }
 
     minAlt = Math.min(minAlt, curAlt);
     maxAlt = Math.max(maxAlt, curAlt);
 
-    if (prevAlt <= 0 && curAlt > 0 && !rise) rise = interpolateCrossing(prevTime, prevAlt, curTime, curAlt);
-    if (prevAlt >= 0 && curAlt < 0 && !set) set = interpolateCrossing(prevTime, prevAlt, curTime, curAlt);
+    if (prevAlt <= 0 && curAlt > 0 && !rise) {
+      rise = interpolateCrossing(prevTime, prevAlt, curTime, curAlt);
+    }
+
+    if (prevAlt >= 0 && curAlt < 0 && !set) {
+      set = interpolateCrossing(prevTime, prevAlt, curTime, curAlt);
+    }
 
     prevTime = curTime;
     prevAlt = curAlt;
   }
 
-  return { rise, set, alwaysUp: minAlt > 0, alwaysDown: maxAlt < 0 };
+  return { rise, set, minAlt, maxAlt };
 }
 
-function interpolateCrossing(t1, a1, t2, a2) {
-  const ratio = Math.abs(a1) / (Math.abs(a1) + Math.abs(a2));
-  return new Date(t1.getTime() + (t2.getTime() - t1.getTime()) * ratio);
+function findRiseSetTimes(bodyKey, date) {
+  if (typeof Astronomy === "undefined") {
+    return {
+      rise: null,
+      set: null,
+      riseDayOffset: 0,
+      setDayOffset: 0,
+      alwaysUp: false,
+      alwaysDown: false
+    };
+  }
+
+  const start = getLocalMidnight(date);
+  const prevStart = new Date(start.getTime() - 24 * 60 * 60 * 1000);
+  const nextStart = new Date(start.getTime() + 24 * 60 * 60 * 1000);
+
+  const prev = findRiseSetCrossingsInRange(bodyKey, prevStart, 24);
+  const today = findRiseSetCrossingsInRange(bodyKey, start, 24);
+  const next = findRiseSetCrossingsInRange(bodyKey, nextStart, 24);
+
+  const minAlt = Math.min(
+    prev.minAlt ?? Infinity,
+    today.minAlt ?? Infinity,
+    next.minAlt ?? Infinity
+  );
+  const maxAlt = Math.max(
+    prev.maxAlt ?? -Infinity,
+    today.maxAlt ?? -Infinity,
+    next.maxAlt ?? -Infinity
+  );
+
+  const riseInfo = chooseRiseCrossing(prev, today, next);
+  const setInfo = chooseSetCrossing(prev, today, next);
+
+  return {
+    rise: riseInfo ? riseInfo.date : null,
+    set: setInfo ? setInfo.date : null,
+    riseDayOffset: riseInfo ? riseInfo.dayOffset : 0,
+    setDayOffset: setInfo ? setInfo.dayOffset : 0,
+
+    // 旧プロパティも互換用に残す
+    riseNextDay: riseInfo ? riseInfo.dayOffset === 1 : false,
+    setNextDay: setInfo ? setInfo.dayOffset === 1 : false,
+    risePreviousDay: riseInfo ? riseInfo.dayOffset === -1 : false,
+    setPreviousDay: setInfo ? setInfo.dayOffset === -1 : false,
+
+    alwaysUp: minAlt > 0,
+    alwaysDown: maxAlt < 0
+  };
+}
+
+function chooseRiseCrossing(prev, today, next) {
+  // 基本は当日内の「昇」を優先。
+  if (today.rise) {
+    return { date: today.rise, dayOffset: 0 };
+  }
+
+  // 当日に「沈」だけがある場合、その天体は前日に昇ってから沈む流れなので、前日の昇を補完。
+  if (today.set && prev.rise) {
+    return { date: prev.rise, dayOffset: -1 };
+  }
+
+  // 当日になければ翌日の昇を補完。
+  if (next.rise) {
+    return { date: next.rise, dayOffset: 1 };
+  }
+
+  // 最後の保険。
+  if (prev.rise) {
+    return { date: prev.rise, dayOffset: -1 };
+  }
+
+  return null;
+}
+
+function chooseSetCrossing(prev, today, next) {
+  // 基本は当日内の「沈」を優先。
+  if (today.set) {
+    return { date: today.set, dayOffset: 0 };
+  }
+
+  // 当日に「昇」だけがある場合、その天体は翌日に沈む流れなので、翌日の沈を補完。
+  if (today.rise && next.set) {
+    return { date: next.set, dayOffset: 1 };
+  }
+
+  // 当日になければ翌日の沈を補完。
+  if (next.set) {
+    return { date: next.set, dayOffset: 1 };
+  }
+
+  // 最後の保険。
+  if (prev.set) {
+    return { date: prev.set, dayOffset: -1 };
+  }
+
+  return null;
+}
+
+function formatTimeWithDay(date, dayOffset = 0) {
+  if (!date) return "--:--";
+  const prefix = dayOffset < 0 ? "昨" : dayOffset > 0 ? "翌" : "";
+  return `${prefix}${formatTimeShort(date)}`;
 }
 
 function formatRiseSetText(rs) {
   if (!rs) return "昇 --:-- / 沈 --:--";
   if (rs.alwaysUp) return "一日中地平線上";
   if (rs.alwaysDown) return "一日中地平線下";
-  return `昇 ${formatTimeShort(rs.rise)} / 沈 ${formatTimeShort(rs.set)}`;
+  return `昇 ${formatTimeWithDay(rs.rise, rs.riseDayOffset)} / 沈 ${formatTimeWithDay(rs.set, rs.setDayOffset)}`;
 }
 
 
@@ -1020,92 +1124,24 @@ function moonPhaseName(age) {
 }
 
 function drawMoonIcon(x, y, phase) {
-  // 星図上の月アイコン。
-  // moon-fix: 月カードと同じ考え方で、細い月が不自然な丸に見えないよう改善。
   const r = 11;
-  const synodic = 29.530588853;
-  const age = phase ? phase.age : 14.8;
-  const illum = phase ? Math.max(0, Math.min(1, phase.fraction ?? 0.5)) : 0.5;
-  const waxing = age < synodic / 2;
 
   ctx.save();
-  ctx.translate(x, y);
 
-  // halo
-  const halo = ctx.createRadialGradient(0, 0, 2, 0, 0, r * 2.25);
+  const halo = ctx.createRadialGradient(x, y, 2, x, y, r * 2.25);
   halo.addColorStop(0, "rgba(255,246,215,0.34)");
   halo.addColorStop(1, "rgba(255,246,215,0)");
   ctx.fillStyle = halo;
   ctx.beginPath();
-  ctx.arc(0, 0, r * 2.25, 0, Math.PI * 2);
+  ctx.arc(x, y, r * 2.25, 0, Math.PI * 2);
   ctx.fill();
 
-  // Clip to moon disk
-  ctx.save();
-  ctx.beginPath();
-  ctx.arc(0, 0, r, 0, Math.PI * 2);
-  ctx.clip();
+  drawMoonPhaseDisk(ctx, x, y, r, phase, "rgba(13,18,28,0.98)");
 
-  // dark base
-  ctx.fillStyle = "rgba(13,18,28,0.98)";
-  ctx.fillRect(-r, -r, r * 2, r * 2);
-
-  // lunar surface gradient
-  const moonGrad = ctx.createRadialGradient(-3.5, -4.5, 1, 0, 0, r + 3);
-  moonGrad.addColorStop(0, "rgba(255,252,226,1)");
-  moonGrad.addColorStop(0.58, "rgba(232,224,190,1)");
-  moonGrad.addColorStop(1, "rgba(174,165,136,1)");
-
-  if (illum > 0.985) {
-    ctx.fillStyle = moonGrad;
-    ctx.fillRect(-r, -r, r * 2, r * 2);
-  } else if (illum < 0.015) {
-    // new moon: keep dark disk
-  } else {
-    // Draw a full bright disk, then cover part of it with a shifted dark disk.
-    // This creates a cleaner crescent / gibbous shape than the old semi-transparent ellipse.
-    ctx.fillStyle = moonGrad;
-    ctx.beginPath();
-    ctx.arc(0, 0, r, 0, Math.PI * 2);
-    ctx.fill();
-
-    ctx.fillStyle = "rgba(13,18,28,0.98)";
-
-    let coverShift;
-    if (illum <= 0.5) {
-      // Crescent: the dark disk covers most of the bright disk.
-      coverShift = r * (2 * illum);
-      ctx.beginPath();
-      ctx.arc(waxing ? -coverShift : coverShift, 0, r, 0, Math.PI * 2);
-      ctx.fill();
-    } else {
-      // Gibbous: cover only the smaller dark side.
-      coverShift = r * (2 * (1 - illum));
-      ctx.beginPath();
-      ctx.arc(waxing ? coverShift : -coverShift, 0, r, 0, Math.PI * 2);
-      ctx.fill();
-    }
-  }
-
-  // Subtle surface texture
-  ctx.fillStyle = "rgba(82,76,64,0.16)";
-  [
-    [-3.2, -3.6, 1.3],
-    [3.8, 2.5, 1.5],
-    [-1.0, 4.0, 0.9]
-  ].forEach(([dx, dy, rr]) => {
-    ctx.beginPath();
-    ctx.arc(dx, dy, rr, 0, Math.PI * 2);
-    ctx.fill();
-  });
-
-  ctx.restore();
-
-  // rim
   ctx.strokeStyle = "rgba(255,255,255,0.46)";
   ctx.lineWidth = 1;
   ctx.beginPath();
-  ctx.arc(0, 0, r, 0, Math.PI * 2);
+  ctx.arc(x, y, r, 0, Math.PI * 2);
   ctx.stroke();
 
   ctx.restore();
