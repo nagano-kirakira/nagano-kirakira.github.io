@@ -1,14 +1,13 @@
-# nagano-sky Ophiuchus expanded fix v4
+# nagano-sky Ophiuchus expanded fix v5
 
 ## ベース
-`nagano-sky-ophiuchus-expanded-v3.zip`
+`nagano-sky-ophiuchus-expanded-v4-copyright.zip`
 
 ## 修正内容
-ページ最下部に著作権表記を追加しました。
+フッターの著作権表記部分について、背景が白く見えていたため、
+ページになじむよう **黒背景へ固定** しました。
 
-### 追加した表示
-- `©しなの星空散歩会　きらきら`
-
-### 実装箇所
-- `index.html` に `footer.skyPageFooter` を追加
-- `style.css` にフッター用スタイルを追加
+### 主な変更
+- `.kirakira-sky-page .skyPageFooter` に黒系背景を指定
+- 上境界線を薄く追加
+- 段落側は `background: transparent;` を指定
