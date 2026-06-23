@@ -769,55 +769,96 @@ function flushLabels() {
   }
 }
 
-function drawMoonPhaseDisk(targetCtx, x, y, r, phase, darkColor = "rgba(13,18,28,0.98)") {
+function drawMoonPhaseDisk(targetCtx, x, y, r, phase) {
   const synodic = 29.530588853;
-  const age = phase ? phase.age : 14.8;
-  const illum = phase ? Math.max(0, Math.min(1, phase.fraction ?? 0.5)) : 0.5;
-  const waxing = age < synodic / 2;
+  const age = phase ? phase.age : 0;
+  const p = ((age % synodic) + synodic) % synodic / synodic;   // 0..1
+  const waxing = p < 0.5;
+
+  // k = cos(phase angle)
+  // new moon: +1, first quarter: 0, full moon: -1, last quarter: 0
+  const k = Math.cos(2 * Math.PI * p);
 
   targetCtx.save();
-  targetCtx.translate(x, y);
 
+  // Clip to the moon disk.
   targetCtx.beginPath();
-  targetCtx.arc(0, 0, r, 0, Math.PI * 2);
+  targetCtx.arc(x, y, r, 0, Math.PI * 2);
   targetCtx.clip();
 
-  targetCtx.fillStyle = darkColor;
-  targetCtx.fillRect(-r, -r, r * 2, r * 2);
+  // Dark base.
+  targetCtx.fillStyle = "rgba(13,18,28,0.98)";
+  targetCtx.fillRect(x - r, y - r, r * 2, r * 2);
 
-  const moonGrad = targetCtx.createRadialGradient(-r * 0.35, -r * 0.4, 1, 0, 0, r + 3);
+  // Bright surface gradient.
+  const moonGrad = targetCtx.createRadialGradient(x - r * 0.35, y - r * 0.38, 1, x, y, r + 4);
   moonGrad.addColorStop(0, "rgba(255,252,226,1)");
   moonGrad.addColorStop(0.58, "rgba(232,224,190,1)");
   moonGrad.addColorStop(1, "rgba(174,165,136,1)");
+  targetCtx.fillStyle = moonGrad;
 
-  if (illum > 0.985) {
-    targetCtx.fillStyle = moonGrad;
-    targetCtx.fillRect(-r, -r, r * 2, r * 2);
-  } else if (illum >= 0.015) {
-    // 明るい円を描いてから、暗い円をずらして重ねる。
-    // 上弦前後（waxing）は右側が明るく、下弦前後（waning）は左側が明るくなる。
-    targetCtx.fillStyle = moonGrad;
+  // Handle near-new and near-full specially.
+  if (k > 0.995) {
+    // Very near new moon: keep almost dark.
+  } else if (k < -0.995) {
     targetCtx.beginPath();
-    targetCtx.arc(0, 0, r, 0, Math.PI * 2);
+    targetCtx.arc(x, y, r, 0, Math.PI * 2);
     targetCtx.fill();
+  } else {
+    const a = Math.max(0.01, Math.abs(k)) * r;  // terminator ellipse x-radius
 
-    targetCtx.fillStyle = darkColor;
-    const coverX = (waxing ? -1 : 1) * (2 * r * illum);
     targetCtx.beginPath();
-    targetCtx.arc(coverX, 0, r, 0, Math.PI * 2);
+
+    if (waxing) {
+      // Waxing moon: illuminated side is on the RIGHT.
+      // Trace the bright limb on the right side of the disk,
+      // then return via the terminator ellipse.
+      targetCtx.moveTo(x, y - r);
+      targetCtx.arc(x, y, r, -Math.PI / 2, Math.PI / 2, false);
+
+      // If k >= 0: crescent to first quarter
+      // If k < 0: gibbous to full
+      // In both cases, using the opposite direction on ellipse makes the bulge natural.
+      if (k >= 0) {
+        targetCtx.ellipse(x, y, a, r, 0, Math.PI / 2, -Math.PI / 2, true);
+      } else {
+        targetCtx.ellipse(x, y, a, r, 0, Math.PI / 2, -Math.PI / 2, false);
+      }
+    } else {
+      // Waning moon: illuminated side is on the LEFT.
+      targetCtx.moveTo(x, y - r);
+      targetCtx.arc(x, y, r, -Math.PI / 2, Math.PI / 2, true);
+
+      if (k >= 0) {
+        targetCtx.ellipse(x, y, a, r, 0, Math.PI / 2, -Math.PI / 2, false);
+      } else {
+        targetCtx.ellipse(x, y, a, r, 0, Math.PI / 2, -Math.PI / 2, true);
+      }
+    }
+
+    targetCtx.closePath();
     targetCtx.fill();
   }
 
-  targetCtx.fillStyle = "rgba(82,76,64,0.14)";
+  // Subtle maria / texture
+  targetCtx.fillStyle = "rgba(82,76,64,0.13)";
   [
     [-r * 0.25, -r * 0.30, r * 0.12],
-    [ r * 0.33,  r * 0.22, r * 0.14],
-    [-r * 0.08,  r * 0.36, r * 0.09]
+    [ r * 0.32,  r * 0.22, r * 0.13],
+    [-r * 0.06,  r * 0.34, r * 0.08]
   ].forEach(([dx, dy, rr]) => {
     targetCtx.beginPath();
-    targetCtx.arc(dx, dy, rr, 0, Math.PI * 2);
+    targetCtx.arc(x + dx, y + dy, rr, 0, Math.PI * 2);
     targetCtx.fill();
   });
+
+  // Gentle shading for depth
+  const shade = targetCtx.createLinearGradient(x - r, y, x + r, y);
+  shade.addColorStop(0, "rgba(0,0,0,0.10)");
+  shade.addColorStop(0.5, "rgba(0,0,0,0)");
+  shade.addColorStop(1, "rgba(0,0,0,0.12)");
+  targetCtx.fillStyle = shade;
+  targetCtx.fillRect(x - r, y - r, r * 2, r * 2);
 
   targetCtx.restore();
 }
@@ -849,19 +890,7 @@ function drawMoonCardIcon(phase) {
   g.arc(x, y, 45, 0, Math.PI * 2);
   g.fill();
 
-  drawMoonPhaseDisk(g, x, y, r, phase, "rgba(16,20,30,0.98)");
-
-  const shade = g.createLinearGradient(x - r, y, x + r, y);
-  shade.addColorStop(0, "rgba(0,0,0,0.18)");
-  shade.addColorStop(0.5, "rgba(0,0,0,0)");
-  shade.addColorStop(1, "rgba(0,0,0,0.20)");
-  g.save();
-  g.beginPath();
-  g.arc(x, y, r, 0, Math.PI * 2);
-  g.clip();
-  g.fillStyle = shade;
-  g.fillRect(x - r, y - r, r * 2, r * 2);
-  g.restore();
+  drawMoonPhaseDisk(g, x, y, r, phase);
 
   g.strokeStyle = "rgba(255,255,255,0.42)";
   g.lineWidth = 1.2;
@@ -1199,7 +1228,6 @@ function moonPhaseName(age) {
 
 function drawMoonIcon(x, y, phase) {
   const r = 11;
-
   ctx.save();
 
   const halo = ctx.createRadialGradient(x, y, 2, x, y, r * 2.25);
@@ -1210,7 +1238,7 @@ function drawMoonIcon(x, y, phase) {
   ctx.arc(x, y, r * 2.25, 0, Math.PI * 2);
   ctx.fill();
 
-  drawMoonPhaseDisk(ctx, x, y, r, phase, "rgba(13,18,28,0.98)");
+  drawMoonPhaseDisk(ctx, x, y, r, phase);
 
   ctx.strokeStyle = "rgba(255,255,255,0.46)";
   ctx.lineWidth = 1;
