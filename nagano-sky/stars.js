@@ -121,6 +121,20 @@ const SKY_STARS = [
   { id:"yedPosterior", name:"イェド・ポステリオル", ra:16.3054, dec:-4.6925, mag:3.2 },
   { id:"deltaCyg", name:"δ Cyg", ra:19.7496, dec:45.1308, mag:2.9 },
   { id:"etaCyg", name:"η Cyg", ra:19.9384, dec:35.0834, mag:3.9 },
+  { id:"thetaOph", name:"θ Oph", ra:17.3668, dec:-24.9995, mag:3.3 },
+    { id:"phiOph", name:"φ Oph", ra:16.5189, dec:-16.6127, mag:4.3 },
+  { id:"omegaOph", name:"ω Oph", ra:16.1135, dec:-21.4660, mag:4.4 },
+  { id:"gammaOph", name:"γ Oph", ra:17.7982, dec:2.7073, mag:3.8 },
+  { id:"kappaOph", name:"κ Oph", ra:16.9611, dec:9.3750, mag:3.2 },
+  { id:"lambdaOph", name:"λ Oph", ra:16.5152, dec:1.9841, mag:3.8 },
+  // constellation-shape-safeB: 実際の星座線の印象へ寄せるための最小補助星
+  { id:"etaLeo", name:"η Leo", ra:10.1222, dec:16.7627, mag:3.5 },
+
+  { id:"zetaOph", name:"ζ Oph", ra:16.6193, dec:-10.5671, mag:2.6 },
+
+  { id:"etaSco", name:"η Sco", ra:17.2026, dec:-43.2392, mag:3.3 },
+  { id:"iotaSco", name:"ι Sco", ra:17.7931, dec:-40.1269, mag:3.0 },
+  { id:"kappaSco", name:"κ Sco", ra:17.7081, dec:-39.0300, mag:2.4 },
 ];
 
 const SKY_CONSTELLATIONS = [
@@ -145,13 +159,13 @@ const SKY_CONSTELLATIONS = [
     ["castor","pollux"],["castor","wasat"],["pollux","wasat"],["wasat","mekbuda"],["mekbuda","alhena"]
   ]},
   { name:"しし座", label:{ra:10.9, dec:16.5}, lines:[
-    ["regulus","algieba"],["algieba","adhafera"],["adhafera","rasElased"],
+    ["regulus","etaLeo"],["etaLeo","algieba"],["algieba","adhafera"],["adhafera","rasElased"],
     ["regulus","chertan"],["chertan","denebola"],["denebola","zosma"],["zosma","algieba"]
   ]},
   { name:"おとめ座", label:{ra:13.1, dec:-2.0}, lines:[["spica","porrima"],["porrima","vindemiatrix"]] },
   { name:"うしかい座", label:{ra:14.3, dec:23.0}, lines:[["arcturus","izars"],["arcturus","muphrid"]] },
   { name:"はくちょう座", label:{ra:20.2, dec:38.0}, lines:[
-    ["deneb","sadr"],["sadr","albireo"],["sadr","gienahCyg"],["sadr","deltaCyg"],["sadr","etaCyg"]
+    ["deneb","sadr"],["sadr","albireo"],["sadr","gienahCyg"],["sadr","deltaCyg"]
   ]},
   { name:"こと座", label:{ra:18.8, dec:36.0}, lines:[["vega","sulafat"],["sulafat","sheliak"],["sheliak","vega"]] },
   { name:"わし座", label:{ra:19.85, dec:9.0}, lines:[["tarazed","altair"],["altair","alshain"]] },
@@ -165,10 +179,22 @@ const SKY_CONSTELLATIONS = [
   ]},
   { name:"さそり座", label:{ra:16.7, dec:-28.0}, lines:[
     ["acrab","dschubba"],["dschubba","piSco"],["piSco","antares"],
-    ["antares","tauSco"],["tauSco","epsSco"],["epsSco","shaula"],["shaula","lesath"],["lesath","sargas"]
+    ["antares","tauSco"],["tauSco","epsSco"],
+    ["epsSco","etaSco"],["etaSco","sargas"],["sargas","iotaSco"],["iotaSco","kappaSco"],["kappaSco","shaula"],["shaula","lesath"]
   ]},
   { name:"へびつかい座", label:{ra:17.1, dec:1.0}, lines:[
-    ["rasalhague","cebalrai"],["rasalhague","yedPrior"],["yedPrior","yedPosterior"],["yedPosterior","sabik"],["sabik","cebalrai"]
+    // 上側と中央の流れ
+    ["rasalhague","kappaOph"],["kappaOph","lambdaOph"],["lambdaOph","yedPosterior"],
+    // 主要星
+    ["rasalhague","cebalrai"],["cebalrai","gammaOph"],
+    // 左側
+    ["lambdaOph","yedPrior"],["yedPrior","yedPosterior"],
+    // ε → ζ を追加
+    ["yedPosterior","zetaOph"],
+    // 右下
+    ["gammaOph","sabik"],["sabik","thetaOph"],
+    // 下側の流れ
+    ["sabik","zetaOph"],["zetaOph","phiOph"],["phiOph","omegaOph"]
   ]},
   { name:"りゅう座", label:{ra:17.7, dec:54.0}, lines:[["eltanin","rastaban"]] },
   { name:"こぐま座", label:{ra:14.6, dec:78.0}, lines:[["polaris","kochab"],["kochab","pherkad"]] },
