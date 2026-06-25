@@ -580,13 +580,22 @@
   }
 }
 
-/* save / print action buttons */
+
+/* PNG save action button in title panel */
+.kirakira-sky-page .titlePanel{
+  padding-bottom: 52px;
+}
+
 .kirakira-sky-page .skyActionBar{
+  position: absolute;
+  right: 18px;
+  bottom: 14px;
+  z-index: 3;
   display: flex;
-  justify-content: center;
+  justify-content: flex-end;
   align-items: center;
-  gap: 12px;
-  margin: -4px auto 22px;
+  gap: 10px;
+  margin: 0;
   flex-wrap: wrap;
 }
 
@@ -596,9 +605,9 @@
   background: rgba(10, 20, 38, 0.72);
   color: rgba(235, 248, 255, 0.92);
   border-radius: 999px;
-  padding: 9px 18px;
+  padding: 8px 15px;
   font-family: var(--font-body);
-  font-size: 0.92rem;
+  font-size: 0.86rem;
   font-weight: 700;
   letter-spacing: 0.04em;
   line-height: 1.2;
@@ -623,17 +632,30 @@
   transform: none;
 }
 
+.kirakira-sky-page .printActionButton,
+.kirakira-sky-page #printSkyButton{
+  display: none !important;
+}
+
 .kirakira-sky-page.isCapturing .skyActionBar{
   display: none !important;
 }
 
 @media (max-width: 640px){
-  .kirakira-sky-page .skyActionBar{
-    margin: -2px auto 18px;
-    gap: 8px;
+  .kirakira-sky-page .titlePanel{
+    padding-bottom: 24px;
   }
+
+  .kirakira-sky-page .skyActionBar{
+    position: relative;
+    right: auto;
+    bottom: auto;
+    justify-content: center;
+    margin: 14px auto 0;
+  }
+
   .kirakira-sky-page .skyActionButton{
-    font-size: 0.84rem;
+    font-size: 0.82rem;
     padding: 8px 14px;
   }
 }
@@ -643,4 +665,3 @@
     display: none !important;
   }
 }
-

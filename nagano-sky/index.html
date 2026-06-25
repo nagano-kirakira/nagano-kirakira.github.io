@@ -106,14 +106,12 @@
         <h1>長野市の今夜の星空</h1>
         <p class="lead">長野県長野市｜毎日20:00の星空を自動表示</p>
         <p id="targetDate" class="dateText"></p>
+        <div class="skyActionBar" aria-label="星空ページの保存">
+          <button type="button" id="savePngButton" class="skyActionButton">PNG保存</button>
+          <button type="button" id="printSkyButton" class="skyActionButton printActionButton" hidden>印刷</button>
+        </div>
       </div>
     </header>
-
-    <div class="skyActionBar" aria-label="星空ページの保存と印刷">
-      <button type="button" id="savePngButton" class="skyActionButton">PNG保存</button>
-      <button type="button" id="printSkyButton" class="skyActionButton">印刷</button>
-    </div>
-
     <section class="skyCard">
       <canvas id="skyCanvas"></canvas>
 
