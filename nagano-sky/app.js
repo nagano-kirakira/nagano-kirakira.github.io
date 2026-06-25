@@ -1457,8 +1457,175 @@ function render() {
   drawInfo(date, m);
 }
 
+
+
+function getSkyCaptureTarget() {
+  return document.querySelector(".kirakira-sky-page");
+}
+
+function waitForNextFrame() {
+  return new Promise(resolve => requestAnimationFrame(() => requestAnimationFrame(resolve)));
+}
+
+async function captureSkyPageAsCanvas() {
+  if (typeof html2canvas !== "function") {
+    alert("PNG保存機能の読み込みに失敗しました。通信環境を確認してから再度お試しください。");
+    return null;
+  }
+
+  const target = getSkyCaptureTarget();
+  if (!target) return null;
+
+  if (document.fonts && document.fonts.ready) {
+    try { await document.fonts.ready; } catch (e) {}
+  }
+
+  target.classList.add("isCapturing");
+  await waitForNextFrame();
+
+  try {
+    return await html2canvas(target, {
+      backgroundColor: null,
+      scale: Math.min(window.devicePixelRatio || 1, 2),
+      useCORS: true,
+      logging: false
+    });
+  } finally {
+    target.classList.remove("isCapturing");
+  }
+}
+
+function getSkyPngFileName() {
+  const date = getTodayAt20();
+  const yyyy = date.getFullYear();
+  const mm = String(date.getMonth() + 1).padStart(2, "0");
+  const dd = String(date.getDate()).padStart(2, "0");
+  return `nagano-sky-${yyyy}-${mm}-${dd}.png`;
+}
+
+function setActionButtonsBusy(isBusy) {
+  const buttons = [
+    document.getElementById("savePngButton"),
+    document.getElementById("printSkyButton")
+  ].filter(Boolean);
+  buttons.forEach(button => { button.disabled = isBusy; });
+}
+
+async function saveSkyPagePng() {
+  setActionButtonsBusy(true);
+  try {
+    const captureCanvas = await captureSkyPageAsCanvas();
+    if (!captureCanvas) return;
+
+    captureCanvas.toBlob(blob => {
+      if (!blob) return;
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement("a");
+      link.href = url;
+      link.download = getSkyPngFileName();
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+      setTimeout(() => URL.revokeObjectURL(url), 1000);
+    }, "image/png");
+  } finally {
+    setActionButtonsBusy(false);
+  }
+}
+
+async function printSkyPageImage() {
+  const printWindow = window.open("", "_blank");
+  if (!printWindow) {
+    alert("印刷用ウィンドウを開けませんでした。ポップアップブロックを解除してから再度お試しください。");
+    return;
+  }
+
+  printWindow.document.write(`<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="utf-8">
+  <title>長野市の今夜の星空 印刷</title>
+  <style>
+    html, body {
+      margin: 0;
+      padding: 0;
+      background: #020712;
+      color: #ffffff;
+      text-align: center;
+      font-family: sans-serif;
+    }
+    .loading {
+      padding: 32px 16px;
+      color: rgba(255,255,255,0.8);
+    }
+  </style>
+</head>
+<body>
+  <p class="loading">印刷用画像を作成しています...</p>
+</body>
+</html>`);
+  printWindow.document.close();
+
+  setActionButtonsBusy(true);
+  try {
+    const captureCanvas = await captureSkyPageAsCanvas();
+    if (!captureCanvas) {
+      printWindow.close();
+      return;
+    }
+
+    const dataUrl = captureCanvas.toDataURL("image/png");
+    printWindow.document.open();
+    printWindow.document.write(`<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="utf-8">
+  <title>長野市の今夜の星空 印刷</title>
+  <style>
+    html, body {
+      margin: 0;
+      padding: 0;
+      background: #020712;
+      text-align: center;
+    }
+    img {
+      display: block;
+      width: 100%;
+      max-width: 100%;
+      height: auto;
+      margin: 0 auto;
+    }
+    @media print {
+      @page { margin: 0; }
+      html, body { background: #020712; }
+      img { width: 100%; }
+    }
+  </style>
+</head>
+<body>
+  <img src="${dataUrl}" alt="長野市の今夜の星空" onload="setTimeout(() => { window.focus(); window.print(); }, 300)">
+</body>
+</html>`);
+    printWindow.document.close();
+  } finally {
+    setActionButtonsBusy(false);
+  }
+}
+
+function setupActionButtons() {
+  const saveButton = document.getElementById("savePngButton");
+  const printButton = document.getElementById("printSkyButton");
+
+  if (saveButton) saveButton.addEventListener("click", saveSkyPagePng);
+  if (printButton) printButton.addEventListener("click", printSkyPageImage);
+}
+
+
 window.addEventListener("resize", render);
-window.addEventListener("DOMContentLoaded", render);
+window.addEventListener("DOMContentLoaded", () => {
+  render();
+  setupActionButtons();
+});
 
 
 

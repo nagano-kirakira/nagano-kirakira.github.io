@@ -109,6 +109,11 @@
       </div>
     </header>
 
+    <div class="skyActionBar" aria-label="星空ページの保存と印刷">
+      <button type="button" id="savePngButton" class="skyActionButton">PNG保存</button>
+      <button type="button" id="printSkyButton" class="skyActionButton">印刷</button>
+    </div>
+
     <section class="skyCard">
       <canvas id="skyCanvas"></canvas>
 
@@ -155,6 +160,7 @@
 
   <script src="https://cdn.jsdelivr.net/npm/astronomy-engine@2.1.19/astronomy.browser.min.js"></script>
   <script src="./stars.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js"></script>
   <script src="./app.js"></script>
 </body>
 </html>
