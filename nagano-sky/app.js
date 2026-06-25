@@ -91,7 +91,7 @@ function projectAltAz(alt, az, m) {
   if (alt < 0) return null;
   const r = (90 - alt) / 90 * m.radius;
   const a = degToRad(az);
-  return { x: m.cx + r * Math.sin(a), y: m.cy - r * Math.cos(a) };
+  return { x: m.cx - r * Math.sin(a), y: m.cy - r * Math.cos(a) };
 }
 
 function drawBackground(m) {
@@ -128,7 +128,7 @@ function drawCardinal(m) {
 
   for (const p of points) {
     const a = degToRad(p.az);
-    const rawX = m.cx + labelRadius * Math.sin(a);
+    const rawX = m.cx - labelRadius * Math.sin(a);
     const rawY = m.cy - labelRadius * Math.cos(a);
     const safe = clampCanvasTextPosition(rawX, rawY, 24);
     ctx.fillText(p.label, safe.x, safe.y);
@@ -175,7 +175,7 @@ function drawGrid(m) {
     const a = degToRad(az);
     ctx.beginPath();
     ctx.moveTo(m.cx, m.cy);
-    ctx.lineTo(m.cx + m.radius * Math.sin(a), m.cy - m.radius * Math.cos(a));
+    ctx.lineTo(m.cx - m.radius * Math.sin(a), m.cy - m.radius * Math.cos(a));
     ctx.stroke();
   }
   ctx.restore();
