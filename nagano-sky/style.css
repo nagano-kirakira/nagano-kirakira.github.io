@@ -641,26 +641,19 @@
   display: none !important;
 }
 
-@media (max-width: 640px){
+@media print{
+  .kirakira-sky-page .skyActionBar{
+    display: none !important;
+  }
+}
+
+
+/* PNG button PC-only fix */
+@media (max-width: 1024px){
   .kirakira-sky-page .titlePanel{
     padding-bottom: 24px;
   }
 
-  .kirakira-sky-page .skyActionBar{
-    position: relative;
-    right: auto;
-    bottom: auto;
-    justify-content: center;
-    margin: 14px auto 0;
-  }
-
-  .kirakira-sky-page .skyActionButton{
-    font-size: 0.82rem;
-    padding: 8px 14px;
-  }
-}
-
-@media print{
   .kirakira-sky-page .skyActionBar{
     display: none !important;
   }

@@ -1,16 +1,17 @@
-# nagano-sky PNG button title fix
+# nagano-sky PNG button PC-only fix
 
 ## ベース
-`nagano-sky-export-print-buttons-fix.zip`
+`nagano-sky-png-button-title-fix.zip`
 
 ## 修正内容
-- 印刷ボタンはいったん非表示にしました。
-- PNG保存ボタンを、タイトルと星図の間ではなく、タイトルパネル右下に移動しました。
-- PNG保存機能、html2canvas読み込み、共通キャプチャ処理は維持しています。
-- PNG化時・印刷時は `.skyActionBar` を非表示にする既存方針を維持しています。
+- PNG保存ボタンをPC版のみ表示に変更しました。
+- スマホ・タブレット幅では `.skyActionBar` を非表示にしました。
+- 既存のスマホ幅でボタンを中央表示するCSSを削除しました。
+- 印刷ボタンは引き続き非表示です。
+
+## 判定
+- `max-width: 1024px` 以下ではPNG保存ボタンを非表示
+- PC幅ではタイトルパネル右下にPNG保存ボタンを表示
 
 ## 変更ファイル
-- `index.html`
 - `style.css`
-
-`app.js` のPNG保存処理・印刷処理本体は変更していません。
